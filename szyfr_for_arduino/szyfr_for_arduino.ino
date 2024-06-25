@@ -1,0 +1,85 @@
+#include <LiquidCrystal.h>
+
+const int shift = 3; // Przesunięcie dla szyfrowania i deszyfrowania
+
+LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
+
+void setup() {
+  Serial.begin(9600);
+  lcd.begin(16, 2); // Inicjalizacja wyświetlacza LCD: 16 znaków, 2 linie
+  lcd.print("  Szyfrowanie!");
+  delay(2000);
+  lcd.clear();
+  lcd.print("Enter e or d:");
+  Serial.println("Wprowadź 'e' dla szyfrowania lub 'd' dla deszyfrowania, a następnie wprowadź słowo:");
+}
+
+void loop() {
+  if (Serial.available() > 0) {
+    char command = Serial.read();
+    while (Serial.available() == 0) { } // Oczekiwanie na wprowadzenie słowa
+    String input = Serial.readStringUntil('\n');
+
+    lcd.clear();
+    
+    if (command == 'e') {
+      String encrypted = encrypt(input, shift);
+      Serial.print("Oryginał: ");
+      Serial.println(input);
+      Serial.print("Zaszyfrowane: ");
+      Serial.println(encrypted);
+      
+      lcd.setCursor(0, 0);
+      lcd.print("Encrypted:");
+      lcd.setCursor(0, 1);
+      lcd.print(encrypted);
+      
+    } else if (command == 'd') {
+      String decrypted = decrypt(input, shift);
+      Serial.print("Zaszyfrowane: ");
+      Serial.println(input);
+      Serial.print("Odszyfrowane: ");
+      Serial.println(decrypted);
+      
+      lcd.setCursor(0, 0);
+      lcd.print("Decrypted:");
+      lcd.setCursor(0, 1);
+      lcd.print(decrypted);
+      
+    } else {
+      Serial.println("Nieznane polecenie. Wpisz  'e' , aby zaszyfrować lub  'd', aby odszyfrować.");
+      lcd.setCursor(0, 0);
+      lcd.print("Unknown cmd.");
+    }
+    
+    Serial.println("\nWprowadź następujące polecenie i słowo:");
+  }
+}
+
+String encrypt(String text, int s) {
+  String result = "";
+  for (int i = 0; i < text.length(); i++) {
+    char c = text[i];
+    if (isUpperCase(c)) {
+      result += char(int(c + s - 65) % 26 + 65);
+    } else if (isLowerCase(c)) {
+      result += char(int(c + s - 97) % 26 + 97);
+    } else {
+      result += c;
+    }
+  }
+  return result;
+}
+
+String decrypt(String text, int s) {
+  return encrypt(text, 26 - s);
+}
+
+bool isUpperCase(char c) {
+  return (c >= 'A' && c <= 'Z');
+}
+
+bool isLowerCase(char c) {
+  return (c >= 'a' && c <= 'z');
+}
+
